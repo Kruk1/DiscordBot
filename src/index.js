@@ -1,9 +1,16 @@
+const dotenv = require('dotenv')
+dotenv.config()
 const { REST } = require("@discordjs/rest"); // Define REST.
 const { Routes } = require("discord-api-types/v9"); // Define Routes.
 const fs = require("fs"); // Define fs (file system).
-const { Client, Intents, Collection } = require("discord.js"); // Define Client, Intents, and Collection.
+const { Client, GatewayIntentBits, Collection } = require("discord.js"); // Define Client, Intents, and Collection.
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+  intents: [
+    GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMembers,
+  ],
 }); // Connect to our discord bot.
 const commands = new Collection(); // Where the bot (slash) commands will be stored.
 const commandarray = []; // Array to store commands for sending to the REST API.
