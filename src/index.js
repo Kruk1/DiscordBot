@@ -10,11 +10,16 @@ const client = new Client({
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.DirectMessageReactions,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildVoiceStates,
   ],
 }); // Connect to our discord bot.
 const commands = new Collection(); // Where the bot (slash) commands will be stored.
 const commandarray = []; // Array to store commands for sending to the REST API.
 const token = process.env.DISCORD_TOKEN; // Token from Railway Env Variable.
+module.exports.existPlayer = false
+module.exports.queue = []
 // Execute code when the "ready" client event is triggered.
 client.once("ready", () => {
   const commandFiles = fs
