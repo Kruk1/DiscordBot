@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { getVoiceConnection} = require('@discordjs/voice');
+let { existPlayer, queue } = require("../index.js")
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,6 +11,8 @@ module.exports = {
         if(activeConnect)
         {
             activeConnect.destroy()
+            existPlayer = false
+            queue = []
             return interaction.reply('Bye!')
         }
         else

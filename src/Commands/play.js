@@ -5,6 +5,7 @@ const { createAudioPlayer, joinVoiceChannel, getVoiceConnection, createAudioReso
 const YouTube = require("discord-youtube-api")
 const youtube = new YouTube(googleApi)
 const ytdl = require('ytdl-core')
+const playDl = require('play-dl')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,6 +23,7 @@ module.exports = {
         {
             activeConnect = joinVoiceChannel(
                 {
+                    debug: true,
                     channelId: interaction.member.voice.channelId,
                     guildId: interaction.member.voice.guild.id,
                     adapterCreator: interaction.member.voice.guild.voiceAdapterCreator
@@ -31,41 +33,58 @@ module.exports = {
 
         if(!existPlayer)
         {
-            existPlayer = true
-            const player = createAudioPlayer({
-                behaviors: {
-                    noSubscriber: NoSubscriberBehavior.Pause,
-                },
-            })
-            activeConnect.subscribe(player)
-            const music = await youtube.searchVideos(interaction.options.getString('music'))
-            const resource = createAudioResource(ytdl(music.url, {
-                filter: "audioonly",
-                quality: 'highestaudio',
-                highWaterMark: 1 << 25
-            }))
-            player.play(resource)
-            interaction.reply(`Playing: ${music.title}`)
-
-            player.on(AudioPlayerStatus.Idle, () => 
+            try
             {
-                if(queue.length > 0)
+                existPlayer = true
+                const player = createAudioPlayer({
+                    behaviors: {
+                        noSubscriber: NoSubscriberBehavior.Pause,
+                    },
+                })
+                activeConnect.subscribe(player)
+                const music = await youtube.searchVideos(interaction.options.getString('music'))
+                const stream = await playDl.stream(music.url)
+                const resource = createAudioResource(stream.stream, {
+                    inputType: stream.type
+                })
+                player.play(resource)
+                interaction.reply(`Playing: ${music.title}`)
+
+                player.on(AudioPlayerStatus.Idle, () => 
                 {
-                    const resource = createAudioResource(ytdl(queue[0].url, {
-                        filter: "audioonly",
-                        quality: 'highestaudio',
-                        highWaterMark: 1 << 25
-                    }))
-                    player.play(resource)
-                    interaction.channel.send(`Playing: ${queue[0].title}`)
-                    queue.shift()
-                }
-                else
-                {
-                    player.stop()
-                    existPlayer = false
-                }
-            })
+                    if(queue.length > 0)
+                    {
+                        const resource = createAudioResource(ytdl(queue[0].url, {
+                            filter: "audioonly",
+                            quality: 'highestaudio',
+                            highWaterMark: 1 << 25
+                        }))
+                        player.play(resource)
+                        interaction.channel.send(`Playing: ${queue[0].title}`)
+                        queue.shift()
+                    }
+                    else
+                    {
+                        player.stop()
+                        existPlayer = false
+                    }
+                })
+
+                activeConnect.on('stateChange', (oldState, newState) => {
+                    console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
+                })
+                
+                player.on('stateChange', (oldState, newState) => {
+                    console.log(`Audio player transitioned from ${oldState.status} to ${newState.status}`);
+                })
+                activeConnect.on('debug', (m) => {
+                    console.log('Voice Debug:', m);
+                });
+            }
+            catch(e)
+            {
+                console.log(e)
+            }
         }
         else
         {
